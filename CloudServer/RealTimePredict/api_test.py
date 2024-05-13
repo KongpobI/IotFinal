@@ -18,6 +18,8 @@ app = Flask(__name__)
 # Load environment variables from ".env"
 load_dotenv()
 
+
+
 # InfluxDB config
 BUCKET = os.environ.get('INFLUXDB_BUCKET')
 print("connecting to", os.environ.get('INFLUXDB_URL'))
@@ -28,6 +30,8 @@ client = InfluxDBClient(
 )
 write_api = client.write_api()
 
+
+
 # Define API endpoint for predictions
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -36,20 +40,20 @@ def predict():
             json_ = request.json
             print(json_)
 
-            # Convert the input JSON to DataFrame
-            query = pd.DataFrame(json_)
+            # Extract data from JSON and convert to list of lists
+            input_data = []
+            for entry in json_:
+                temp = entry.get('temp')
+                humid = entry.get('humid')
+                pres = entry.get('pres')
+                if temp is not None and humid is not None and pres is not None:
+                    input_data.append([humid, pres, temp])
 
             print("Input data for prediction:")
-            print(query)
-
-            # Select the last 5 rows from the input data
-            input_data = query.tail(5)
-            print("Input data for prediction (last 5 rows):")
             print(input_data)
-
-            # Reshape the input data to match the model's expected shape
-            input_data_reshaped = input_data.values.reshape(1, -1)
-
+            
+            input_data_array = np.array(input_data)
+            input_data_reshaped = input_data_array.reshape(1, -1)
             # Make predictions using the model
             prediction = lr.predict(input_data_reshaped)
             print("Predicted values:")

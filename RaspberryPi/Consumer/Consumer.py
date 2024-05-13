@@ -56,10 +56,15 @@ def on_message(client, userdata, msg):
     post_to_predict(json_data)
 
 # Function to post to real-time prediction endpoint
+ldata = []
 def post_to_predict(data):
-    response = requests.post(predict_url, data=data)
+    ldata.append(data)
+    if len(ldata) < 5 :
+        return
+    response = requests.post(predict_url, data=ldata[-1:-5])
+    ldata.pop(0)
     if response.status_code == 200:
-        print("POST request successful")
+        print("POST request successful",data)
     else:
         print("POST request failed!", response.status_code)
 
@@ -67,9 +72,9 @@ def post_to_predict(data):
 def write_to_influxdb(data):
     # format data
     point = Point("Sensor_data")\
-        .field("Temp", data["Temp"])\
-        .field("Humid", data["Humid"])\
-        .field("Pres", data["Pres"])\
+        .field("temp", data["temp"])\
+        .field("humid", data["humid"])\
+        .field("pres", data["pres"])\
 
     write_api.write(BUCKET, os.environ.get('INFLUXDB_ORG'), point)
 
